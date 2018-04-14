@@ -2,11 +2,12 @@
 #include<pthread.h>
 #include<semaphore.h>
 #include<unistd.h>
-sem_t read_counter;
-sem_t database;
 int rCount=0;
 void *Reader(void *arg);
 void *Writer(void *arg);
+
+sem_t read_counter;
+sem_t database;
 
 int main()
 {

@@ -67,3 +67,6 @@ sem_post(&database);
 }
 sem_post(&read_counter);
 }
+
+//5 readers 5 writers 
+//readers writers problem solution using semaphore

@@ -1,63 +1,68 @@
-#include<pthread.h>
 #include<stdio.h>
-#include<stdlib.h>
-#include<windows.h>
-pthread_mutex_t x,wsem;
-pthread_t tid;
-int read_count;
-
-void intialize()
-{
-    pthread_mutex_init(&x,NULL);
-    pthread_mutex_init(&wsem,NULL);
-    read_count=0;
-}
-
-void * reader (void * param)
-{
-    int waittime;
-    waittime = rand() % 5;
-    printf("\nReader is trying to enter");
-    pthread_mutex_lock(&x);
-    read_count++;
-    if(read_count==1)
-        pthread_mutex_lock(&wsem);
-    printf("\n%d Reader is inside ",read_count);
-    pthread_mutex_unlock(&x);
-    Sleep(waittime);
-    pthread_mutex_lock(&x);
-    read_count--;
-    if(read_count==0)
-        pthread_mutex_unlock(&wsem);
-    pthread_mutex_unlock(&x);
-    printf("\nReader is Leaving");
-}   
-
-void * writer (void * param)
-{
-    int waittime;
-    waittime=rand() % 3;
-    printf("\nWriter is trying to enter");
-    pthread_mutex_lock(&wsem);
-    printf("\nWrite has entered");
-    Sleep(waittime);
-    pthread_mutex_unlock(&wsem);    
-    printf("\nWriter is leaving");
-    Sleep(30);
-    exit(0);
-}
+#include<pthread.h>
+#include<semaphore.h>
+#include<unistd.h>
+sem_t read_counter;
+sem_t database;
+int rCount=0;
+void *Reader(void *arg);
+void *Writer(void *arg);
 
 int main()
 {
-    int n1,n2,i;    
-    printf("\nEnter the no of readers: ");
-    scanf("%d",&n1);
-    printf("\nEnter the no of writers: ");
-    scanf("%d",&n2);
-    for(i=0;i<n1;i++)
-        pthread_create(&tid,NULL,reader,NULL);  
-    for(i=0;i<n2;i++)
-        pthread_create(&tid,NULL,writer,NULL);
-    Sleep(30);
-    exit(0);
+int i=0,no_read_thread=5,no_write_thread=5;  // no. of readers is 5 no. of writers is 5
+sem_init(&read_counter,0,1);       //semaphore intialization
+sem_init(&database,0,1);           //semaphore intialization
+ 
+pthread_t read_thread[10],Writer_thr[10];    // decalring thread
+
+for(i=0;i<no_read_thread;i++)
+pthread_create(&read_thread[i],NULL,Reader,(void *)i);      // creating readers thread
+
+for(i=0;i<no_read_thread;i++)
+pthread_create(&Writer_thr[i],NULL,Writer,(void *)i);      // creating writers thread  
+
+for(i=0;i<no_read_thread;i++)
+pthread_join(Writer_thr[i],NULL);                   // joining writers thread
+
+for(i=0;i<no_read_thread;i++)
+pthread_join(read_thread[i],NULL);                  // joinng  readers thread  
+
+sem_destroy(&database);
+sem_destroy(&read_counter);
+return 0;
+}
+
+void * Writer(void *arg)
+{
+sleep(2);
+int temp=(int)arg;
+printf("\nWriter %d is trying to enter into database for modifying the data",temp);
+sem_wait(&database);
+printf("\nWriter %d is writting into the database",temp);
+printf("\nWriter %d is leaving the database");
+sem_post(&database);
+}
+
+void *Reader(void *arg)
+{
+sleep(2);
+int temp=(int)arg;
+printf("\nReader %d is trying to enter into the Database for reading the data",temp);
+sem_wait(&read_counter);
+rCount++;
+if(rCount==1)
+{
+sem_wait(&database);
+printf("\nReader %d is reading the database",temp);
+}
+sem_post(&read_counter);
+sem_wait(&read_counter);
+rCount--;
+if(rCount==0)
+{
+printf("\nReader %d is leaving the database",temp);
+sem_post(&database);
+}
+sem_post(&read_counter);
 }

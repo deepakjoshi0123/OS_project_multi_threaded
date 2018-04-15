@@ -39,10 +39,10 @@ void * Writer(void *arg)
 sleep(2);
 int temp=(int)arg;
 printf("\nWriter %d is trying to enter into database for modifying the data",temp);
-sem_wait(&database);
+sem_wait(&database);         // decrements  the semaphore pointed to by semaphore
 printf("\nWriter %d is writting into the database",temp);
 printf("\nWriter %d is leaving the database");
-sem_post(&database);
+sem_post(&database);          //atomically increment the semaphore pointed to by semaphore 
 }
 
 void *Reader(void *arg)
@@ -50,23 +50,25 @@ void *Reader(void *arg)
 sleep(2);
 int temp=(int)arg;
 printf("\nReader %d is trying to enter into the Database for reading the data",temp);
-sem_wait(&read_counter);
-rCount++;
+sem_wait(&read_counter);   // decreasing value of semaphore
+rCount++;                   // counter increment 
 if(rCount==1)
 {
 sem_wait(&database);
 printf("\nReader %d is reading the database",temp);
 }
-sem_post(&read_counter);
-sem_wait(&read_counter);
+//
+
+//
+sem_post(&read_counter);       //atomically increment the semaphore pointed to by semaphore 
+sem_wait(&read_counter);       //decrements  the semaphore pointed to by semaphore
 rCount--;
 if(rCount==0)
 {
 printf("\nReader %d is leaving the database",temp);
-sem_post(&database);
+sem_post(&database);        //atomically increment the semaphore pointed to by semaphore  
 }
-sem_post(&read_counter);
-}
+sem_post(&read_counter); //atomically increment the semaphore pointed to by semaphore 
 
 //5 readers 5 writers 
 //readers writers problem solution using semaphore
